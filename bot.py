@@ -67,7 +67,9 @@ class BerryLocator:
         """
         Handler for the /start command
         """
-        update.message.reply_text("Hello!")
+        update.message.reply_text(
+            "Hello there! From now I'll send you updates about RPi stocks 👋"
+        )
 
         # Register user if not already registered
         if update.message.chat_id not in self.users:
@@ -78,7 +80,12 @@ class BerryLocator:
         """
         Handler for the /stop command
         """
-        update.message.reply_text("Bye!")
+        update.message.reply_text("As you wish! I'll stop sending you updates 🫠")
+
+        # Unregister user if registered
+        if update.message.chat_id in self.users:
+            self.users.remove(update.message.chat_id)
+            pickle.dump(self.users, open("users.bip", "wb"))
 
         # Remove user if registered
         if update.message.chat_id in self.users:
