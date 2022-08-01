@@ -5,7 +5,7 @@ import pickle
 import threading
 import time
 
-# import requests
+import feedparser
 from telegram import Update
 from telegram.ext import CommandHandler, Updater
 
@@ -22,10 +22,12 @@ class BerryLocator:
         """
         Initialize the bot and register handlers
         """
+        # Stock feed URL
+        self.URL = "https://rpilocator.com/feed/"
+
         # Retrive registered users
         if pathlib.Path("users.bip").exists():
             self.users = pickle.load(open("users.bip", "rb"))
-            print(self.users)
         else:
             self.users = []
 
@@ -39,6 +41,7 @@ class BerryLocator:
 
         # Thread worker
         self.worker = threading.Thread(target=self.__worker).start()
+        self.alive = False
 
     def startBot(self):
         """
@@ -49,6 +52,7 @@ class BerryLocator:
         self.updater.idle()
 
         # Start worker thread
+        self.alive = True
         self.worker.start()
 
     def stopBot(self):
@@ -56,7 +60,8 @@ class BerryLocator:
         Stop the bot
         """
         self.updater.stop()
-        self.worker.stop()
+        self.alive = False
+        self.worker.join()
 
     def __startHandler(self, update: Update, _):
         """
@@ -84,13 +89,27 @@ class BerryLocator:
         """
         Worker thread
         """
-        while True:
-            # Do something
-            for user in self.users:
-                # Send message
-                self.updater.bot.send_message(user, "Hello!")
+        # Set start date
+        feed = feedparser.parse(self.URL)
+        last_update = feed.entries[0].published_parsed
 
-            time.sleep(10)
+        while self.alive:
+            feed = feedparser.parse(self.URL)
+
+            if feed.entries and feed.entries[0].published_parsed > last_update:
+                last_update = feed.entries[0].published_parsed
+                # Send message
+                for user in self.users:
+                    self.updater.bot.send_message(
+                        user,
+                        f"**{feed.entries[0].title}**\n\n"
+                        f"{feed.entries[0].link}\n"
+                        f"__{feed.entries[0].published}__",
+                        parse_mode="Markdown",
+                    )
+
+            # Sleep for 2 minutes
+            time.sleep(120)
 
 
 def main():
