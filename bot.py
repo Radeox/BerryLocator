@@ -40,20 +40,20 @@ class BerryLocator:
         self.dispatcher.add_handler(CommandHandler("stop", self.__stopHandler))
 
         # Thread worker
-        self.worker = threading.Thread(target=self.__worker).start()
+        self.worker = threading.Thread(target=self.__worker)
         self.alive = False
 
     def startBot(self):
         """
         Start the bot
         """
-        # Start bot
-        self.updater.start_polling()
-        self.updater.idle()
-
         # Start worker thread
         self.alive = True
         self.worker.start()
+
+        # Start bot
+        self.updater.start_polling()
+        self.updater.idle()
 
     def stopBot(self):
         """
@@ -82,11 +82,6 @@ class BerryLocator:
         """
         update.message.reply_text("As you wish! I'll stop sending you updates 🫠")
 
-        # Unregister user if registered
-        if update.message.chat_id in self.users:
-            self.users.remove(update.message.chat_id)
-            pickle.dump(self.users, open("users.bip", "wb"))
-
         # Remove user if registered
         if update.message.chat_id in self.users:
             self.users.remove(update.message.chat_id)
@@ -99,12 +94,17 @@ class BerryLocator:
         # Set start date
         feed = feedparser.parse(self.URL)
         last_update = feed.entries[0].published_parsed
+        print(f"Title: {feed.entries[0].title}")
+        print(f"Last update: {last_update}")
 
         while self.alive:
+            print("Checking for updates...")
             feed = feedparser.parse(self.URL)
 
             if feed.entries and feed.entries[0].published_parsed > last_update:
                 last_update = feed.entries[0].published_parsed
+                print(f"Updated: {feed.entries[0].published_parsed}")
+
                 # Send message
                 for user in self.users:
                     self.updater.bot.send_message(
