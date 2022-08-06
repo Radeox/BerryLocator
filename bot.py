@@ -102,16 +102,16 @@ class BerryLocator:
             feed = feedparser.parse(self.URL)
 
             if feed.entries and feed.entries[0].published_parsed > last_update:
+                title = feed.entries[0].title.split(": ")[1]
                 last_update = feed.entries[0].published_parsed
                 print(f"Updated: {feed.entries[0].published_parsed}")
 
-                # Send message
                 for user in self.users:
                     self.updater.bot.send_message(
                         user,
-                        f"**{feed.entries[0].title}**\n\n"
-                        f"{feed.entries[0].link}\n"
-                        f"__{feed.entries[0].published}__",
+                        f"🍇 *{title}*\n\n"
+                        f"*Link*: {feed.entries[0].link}\n"
+                        f"*Date*: _{feed.entries[0].published}_",
                         parse_mode="Markdown",
                     )
 
